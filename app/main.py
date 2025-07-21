@@ -55,34 +55,25 @@ async def weekly_task():
             try:
                 message = await post_channel.fetch_message(latest_message_id)
                 
-                if not message.reactions:
-                    await reaction_channel.send("前回の投稿にはリアクションがありませんでした。")
-                else:
-                    reacted_users = set()
+                reacted_members = set()
+                if message.reactions:
                     for reaction in message.reactions:
                         async for user in reaction.users():
                             if not user.bot:
-                                reacted_users.add(user)
+                                member = post_channel.guild.get_member(user.id)
+                                if member:
+                                    reacted_members.add(member)
 
-                    if not reacted_users:
-                        await reaction_channel.send("前回の投稿にユーザーからのリアクションはありませんでした。")
+                if not reacted_members:
+                    await reaction_channel.send("前回の投稿にユーザーからのリアクションはありませんでした。")
+                else:
+                    user_names = [member.display_name for member in reacted_members]
+                    response = f"前回のリアクション集計結果（{len(reacted_members)}名）：\n{', '.join(user_names)}"
+                    
+                    if len(response) > 2000:
+                        await reaction_channel.send("メッセージが長すぎるため、表示できません。")
                     else:
-                        reacted_members = set()
-                        for user in reacted_users:
-                            member = post_channel.guild.get_member(user.id)
-                            if member:
-                                reacted_members.add(member)
-                        
-                        if not reacted_members:
-                            await reaction_channel.send("前回の投稿にユーザーからのリアクションはありませんでした。")
-                        else:
-                            user_names = [member.display_name for member in reacted_members]
-                            response = f"前回のリアクション集計結果（{len(reacted_members)}名）：\n{', '.join(user_names)}"
-                        
-                        if len(response) > 2000:
-                            await reaction_channel.send("メッセージが長すぎるため、表示できません。")
-                        else:
-                            await reaction_channel.send(response)
+                        await reaction_channel.send(response)
 
             except discord.NotFound:
                 print(f"Warning: Message with ID {latest_message_id} not found. Skipping reaction collection.")
