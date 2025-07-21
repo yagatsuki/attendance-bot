@@ -67,8 +67,17 @@ async def weekly_task():
                     if not reacted_users:
                         await reaction_channel.send("前回の投稿にユーザーからのリアクションはありませんでした。")
                     else:
-                        user_mentions = [user.mention for user in reacted_users]
-                        response = f"前回のリアクション集計結果（{len(reacted_users)}名）：\n{', '.join(user_mentions)}"
+                        reacted_members = set()
+                        for user in reacted_users:
+                            member = post_channel.guild.get_member(user.id)
+                            if member:
+                                reacted_members.add(member)
+                        
+                        if not reacted_members:
+                            await reaction_channel.send("前回の投稿にユーザーからのリアクションはありませんでした。")
+                        else:
+                            user_names = [member.display_name for member in reacted_members]
+                            response = f"前回のリアクション集計結果（{len(reacted_members)}名）：\n{', '.join(user_names)}"
                         
                         if len(response) > 2000:
                             await reaction_channel.send("メッセージが長すぎるため、表示できません。")
